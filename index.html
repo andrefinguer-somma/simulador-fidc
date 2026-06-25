@@ -961,6 +961,21 @@ h2.title{font-weight:300;font-size:3.1vw;line-height:1.08;color:var(--slate8);le
 .phase li{font-size:.8vw;color:var(--ink2);line-height:1.4;padding-left:.9vw;position:relative;margin-bottom:.7vh}
 .phase li:before{content:"";position:absolute;left:0;top:.55vh;width:.38vw;height:.38vw;background:var(--champ);border-radius:50%}
 .phase .presp{font-size:.72vw;color:var(--muted);margin-top:1vh;padding-top:.8vh;border-top:1px solid var(--rule)}
+.syn3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2vw;margin-top:1vh}
+.syncard{border-radius:var(--rcard);padding:2.2vh 1.3vw;border:1px solid var(--rule);background:#fff}
+.syncard.cost{background:var(--paper2)}
+.syncard.gain{border-top:3px solid var(--champ)}
+.syncard .st{font-size:.78vw;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.syncard .sv{font-size:2.1vw;font-weight:600;color:var(--slate8);margin-top:.7vh;line-height:1;letter-spacing:-.01em}
+.syncard.cost .sv{color:var(--slate7)}
+.syncard .sd{font-size:.8vw;color:var(--muted);margin-top:.7vh;line-height:1.4}
+.synhero{display:flex;align-items:center;gap:3vw;background:var(--slate8);color:#fff;border-radius:var(--rplate);padding:2.4vh 1.8vw;margin-top:1.5vh;border-left:3px solid var(--champ);flex-wrap:wrap}
+.synhero .lab{font-size:.78vw;text-transform:uppercase;letter-spacing:.14em;color:var(--champ2);margin-bottom:.6vh}
+.synhero .big{font-size:2.8vw;font-weight:600;color:var(--champ2);line-height:1}
+.synmeta{display:flex;gap:2.2vw;margin-left:auto;flex-wrap:wrap}
+.synmeta b{display:block;font-size:1.3vw;color:#fff;font-weight:600}
+.synmeta span{font-size:.74vw;color:#b8c6cc;line-height:1.3;display:block;max-width:11vw}
+.synnote{font-size:.8vw;color:var(--ink2);line-height:1.55;margin-top:1.4vh;max-width:82vw}
 
 /* heat */
 .heat{border-collapse:separate;border-spacing:.5vw;margin-top:1vh}
@@ -1026,7 +1041,7 @@ const ICN={
   shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'
 };
 function ic(n){return'<svg viewBox="0 0 24 24">'+ICN[n]+'</svg>';}
-const DECK_TOTAL=12;
+const DECK_TOTAL=13;
 function pg(n){return'<div class="pageno">'+n+' / '+DECK_TOTAL+'</div>';}
 function footL(){return'<div class="foot">SOMMA Multi-Family Office · Proposta de constituição de FIDC · confidencial</div>';}
 
@@ -1043,7 +1058,7 @@ function buildDeckBody(d){
     <div class="sub">Um fundo estruturado e gerido pela SOMMA para antecipar recebíveis, ganhar eficiência tributária e remunerar o caixa da sua empresa acima do CDI.</div>
     <div class="meta">Preparado para</div><div class="grupo">${esc(d.grupo)}</div>
     <div class="foot">${d.dataStr} · Confidencial</div>
-    <div class="pageno">1 / 12</div>
+    <div class="pageno">1 / 13</div>
   </section>`);
 
   /* 2 — credenciais */
@@ -1197,7 +1212,39 @@ function buildDeckBody(d){
     </section>`);
   }
 
-  /* 10 — matriz */
+  /* 10 — síntese: fotografia do 1º ano */
+  {
+    const cAno1=d.cost.totalComSetup;
+    const remAno1=sim.years[0].plFim - sim.years[0].plIni;
+    const retAno1=sim.years[0].ret;
+    const cdiAno1=sim.pl0 * p.cdi;
+    const excAno1=remAno1 - cdiAno1;
+    const effAno1=d.dre?d.dre.effTotal:0;
+    const ganho=remAno1+effAno1;
+    const ratio=cAno1>0?ganho/cAno1:0;
+    const ratioTxt=ratio>0?ratio.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'×':'—';
+    S.push(`<section class="slide">
+      <div class="shead"><div class="eyebrow">Fotografia do 1º ano</div>
+      <h2 class="title">O que o ${esc(d.grupo)} ganha no 1º ano</h2></div>
+      <div class="syn3">
+        <div class="syncard cost"><div class="st">Custo do fundo</div><div class="sv">R$ ${fmt0(cAno1)}</div><div class="sd">Setup + operação · ${fmtP(d.cost.pctPL,1)} do PL</div></div>
+        <div class="syncard gain"><div class="st">Remuneração das cotas</div><div class="sv">R$ ${fmt0(remAno1)}</div><div class="sd">${fmtP(retAno1,1)} no ano · já líquido dos custos</div></div>
+        <div class="syncard gain"><div class="st">Economia tributária</div><div class="sv">${effAno1>0?'R$ '+fmt0(effAno1):'—'}</div><div class="sd">${effAno1>0?'menos IRPJ/CSLL no grupo':'preencha os balanços para calcular'}</div></div>
+      </div>
+      <div class="synhero">
+        <div><div class="lab">Ganho total no 1º ano</div><div class="big">R$ ${fmt0(ganho)}</div></div>
+        <div class="synmeta">
+          <div><b>${ratioTxt}</b><span>retorno sobre o custo do fundo</span></div>
+          <div><b>+R$ ${fmt0(excAno1)}</b><span>acima do CDI de ${fmtP(p.cdi)} a.a.</span></div>
+          <div><b>R$ ${fmtMM(sim.years[0].plFim)}</b><span>patrimônio ao fim do 1º ano</span></div>
+        </div>
+      </div>
+      <div class="synnote">Remuneração das cotas e economia tributária somam-se para o grupo: o mesmo deságio que remunera o fundo reduz a base de IRPJ/CSLL da operação. O custo do fundo já está descontado da remuneração das cotas. A partir do 2º ano não há o custo de setup.</div>
+      ${footL()}${pg(10)}
+    </section>`);
+  }
+
+  /* 11 — matriz */
   const h=d.heat;
   let th='<tr><th></th>'+h.pls.map(v=>`<th class="cols">${v/1e6} MM</th>`).join('')+'</tr>';
   h.txs.forEach((t,i)=>{th+=`<tr><th class="rows">${(t*100).toLocaleString('pt-BR',{minimumFractionDigits:2})}%</th>`+h.grid[i].map((v,j)=>{
@@ -1211,7 +1258,7 @@ function buildDeckBody(d){
       <div class="cbox"><h4>Resultado ano a ano por cenário</h4><img src="${d.scenPng}" alt="Cenários"></div>
     </div>
     <div class="softnote" style="margin-top:1.2vh">No cenário base, a cota subordinada rende <b style="color:var(--slate8)">${fmtP(simulate(p,30e6,0.025).cagr)} a.a.</b> Mesmo no cenário conservador o resultado supera com folga o CDI projetado de ${fmtP(p.cdi)} a.a.</div>
-    ${footL()}${pg(10)}
+    ${footL()}${pg(11)}
   </section>`);
 
   /* 11 — etapas de implementação */
@@ -1233,7 +1280,7 @@ function buildDeckBody(d){
         <span class="presp">Distribuidor · investidores · cedente · gestor</span></div>
     </div>
     <div class="softnote" style="margin-top:1.6vh">Cronograma estimado. Os prazos podem variar conforme a complexidade da carteira e os tempos de resposta dos órgãos reguladores. Meta: <b style="color:var(--slate8)">fundo pronto para operar em até 120 dias</b>.</div>
-    ${footL()}${pg(11)}
+    ${footL()}${pg(12)}
   </section>`);
 
   /* 12 — próximos passos */
@@ -1251,7 +1298,7 @@ function buildDeckBody(d){
       <div><b>Escritórios</b>Florianópolis · Jaraguá do Sul · Chapecó · São Paulo</div>
     </div>
     <img class="deck-logo" src="${LOGO_WHITE}" style="position:absolute;right:6vw;top:5.2vh;height:4vh" alt="SOMMA">
-    <div class="pageno">12 / 12</div>
+    <div class="pageno">13 / 13</div>
   </section>`);
 
   return S.join('');
