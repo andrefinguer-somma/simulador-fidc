@@ -94,6 +94,10 @@ details.grp .body{padding:6px 18px 16px;border-top:1px solid var(--rule-2)}
 .grpnote{font-size:11px;color:var(--muted);line-height:1.5;margin:2px 0 8px;padding:8px 11px;background:var(--paper-2);border-radius:var(--r-chip);border-left:2px solid var(--champagne)}
 .dcwarn{font-size:11px;color:var(--muted);padding:0 0 4px;line-height:1.4}
 .dcwarn.off{color:var(--neg)}
+.field.col{flex-direction:column;align-items:stretch;gap:5px}
+.field.col label{flex:none}
+.field.col input{width:100%;text-align:left;font-family:'Inter'}
+.subhead{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:600;margin:14px 0 6px;padding-top:12px;border-top:1px solid var(--rule-2)}
 /* balanços */
 .bal{border:1px solid var(--rule);border-radius:var(--r-chip);padding:10px 12px 4px;margin-bottom:10px;background:var(--paper)}
 .bal-hd{display:flex;align-items:center;gap:8px;margin-bottom:4px}
@@ -233,9 +237,14 @@ footer.note{padding:0 40px 48px;max-width:1680px;margin:0 auto;font-size:11.5px;
     <summary><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg></span><span class="lbl">Proposta comercial</span><span class="tag">SOMMA</span><span class="car">▼</span></summary>
     <div class="body">
       <div class="grpnote">Os termos que vão para a proposta enviada ao cliente. A remuneração SOMMA é a taxa de gestão.</div>
-      <div class="field"><label>Nome do grupo / família</label><input class="txt" id="grupo" type="text" placeholder="Ex.: Grupo Aurora" maxlength="60"></div>
+      <div class="field col"><label>Nome do grupo / família</label><input class="txt" id="grupo" type="text" placeholder="Ex.: Grupo Aurora" maxlength="60"></div>
       <div class="field"><label title="Custo único de estruturação do fundo (Ano 0)">Setup / Estruturação <span class="hint">R$ · custo único</span></label><input class="money" id="estrut" inputmode="numeric" placeholder="0"></div>
       <div class="field"><label title="Remuneração da SOMMA como gestora">Taxa de gestão <span class="hint">% a.a. · remuneração SOMMA</span></label><input type="number" id="gestaoAA" step="0.05" placeholder="0,00"></div>
+      <div class="subhead">Executivo responsável</div>
+      <div class="field col"><label>Nome do executivo</label><input class="txt" id="execNome" type="text" placeholder="Seu nome" maxlength="60"></div>
+      <div class="field col"><label>Cargo</label><input class="txt" id="execCargo" type="text" placeholder="Ex.: Consultor de Investimentos" maxlength="60"></div>
+      <div class="field col"><label>Telefone</label><input class="txt" id="execTel" type="text" placeholder="(00) 00000-0000" maxlength="40"></div>
+      <div class="field col"><label>E-mail de contato</label><input class="txt" id="execEmail" type="text" placeholder="nome@sommainvestimentos.com.br" maxlength="80"></div>
     </div>
   </details>
 
@@ -362,7 +371,7 @@ const FIX={iof:0.0039, caixaCdi:0.95, sCaixa:0.05, admAA:0.0022, admMin:24222, a
   audExt:8800, audLastro:3500};
 
 const MONEY_IDS=['plInicial','estrut'];
-const EDIT_IDS=['grupo','estrut','gestaoAA','plInicial','cdi','pctCred','prazoCred','pctCard','prazoCard','taxaCessao','pddRate','consultAA'];
+const EDIT_IDS=['grupo','estrut','gestaoAA','plInicial','cdi','pctCred','prazoCred','pctCard','prazoCard','taxaCessao','pddRate','consultAA','execNome','execCargo','execTel','execEmail'];
 
 /* ---- balanços (multi-empresa) ---- */
 let balSeq=0;
@@ -399,6 +408,7 @@ function setMoney(id,v){const el=$(id);if(el)el.value=v?Math.round(v).toLocaleSt
 function P(){
   const g=getNum;
   const p={grupo:($('grupo').value||'').trim(),
+    exec:{nome:($('execNome').value||'').trim(),cargo:($('execCargo').value||'').trim(),tel:($('execTel').value||'').trim(),email:($('execEmail').value||'').trim()},
     plInicial:g('plInicial'),iof:FIX.iof,estrut:g('estrut'),cdi:g('cdi')/100,
     sCred:g('pctCred')/100,pzCred:Math.max(g('prazoCred'),1),sCard:g('pctCard')/100,pzCard:Math.max(g('prazoCard'),1),
     taxa:g('taxaCessao')/100,caixaCdi:FIX.caixaCdi,pdd:g('pddRate')/100,
@@ -788,7 +798,7 @@ function buildDeckData(p,sim,cost,plPng,cotaPng,scenPng){
   const dataStr=dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
   let dre=p.dreReady?dreCompute(p,sim):null;
   return{p,sim,cost,dre,dataStr,plPng,cotaPng,scenPng,
-    grupo:p.grupo,
+    grupo:p.grupo,exec:p.exec,
     kPL0:sim.pl0,kPL5:sim.plFinal,kCagr:sim.cagr,kCdi:p.cdi,kExcesso:sim.cagr-p.cdi,
     kMultCap:sim.plFinal/sim.pl0,kMultAporte:sim.plFinal/p.plInicial,kDesagio:sim.desagioAno1,
     heat:LAST.heat,scens:LAST.scens,scenSims:LAST.scenSims};
@@ -969,6 +979,11 @@ h2.title{font-weight:300;font-size:3.1vw;line-height:1.08;color:var(--slate8);le
 .contact{display:flex;gap:3vw;margin-top:3vh;flex-wrap:wrap}
 .contact div{font-size:.86vw;color:#cdd9dd;line-height:1.6}
 .contact b{color:#fff;display:block;font-size:.78vw;letter-spacing:.1em;text-transform:uppercase;color:var(--champ2);margin-bottom:.4vh}
+.execcard{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-left:3px solid var(--champ);border-radius:var(--rcard);padding:1.8vh 1.5vw;margin-top:2.4vh;max-width:46vw}
+.execcard .lbl{font-size:.72vw;text-transform:uppercase;letter-spacing:.14em;color:var(--champ2);margin-bottom:.7vh}
+.execcard .nm{font-size:1.25vw;color:#fff;font-weight:600;line-height:1.1}
+.execcard .cg{font-size:.88vw;color:#cdd9dd;margin-top:.2vh}
+.execcard .ct{font-size:.92vw;color:#fff;margin-top:.9vh}
 
 /* navbar */
 .navbar{position:fixed;left:50%;bottom:2vh;transform:translateX(-50%);display:flex;align-items:center;gap:1.4vw;background:rgba(28,41,49,.92);backdrop-filter:blur(8px);padding:1vh 1.6vw;border-radius:999px;z-index:50;box-shadow:0 6px 22px rgba(0,0,0,.3)}
@@ -1222,10 +1237,15 @@ function buildDeckBody(d){
   </section>`);
 
   /* 12 — próximos passos */
+  const ex=d.exec||{};
+  const hasExec=ex.nome||ex.cargo||ex.tel||ex.email;
+  const execCt=[ex.tel?esc(ex.tel):'',ex.email?esc(ex.email):''].filter(Boolean).join('&nbsp;·&nbsp;');
+  const execBlock=hasExec?`<div class="execcard"><div class="lbl">Seu consultor SOMMA</div>${ex.nome?`<div class="nm">${esc(ex.nome)}</div>`:''}${ex.cargo?`<div class="cg">${esc(ex.cargo)}</div>`:''}${execCt?`<div class="ct">${execCt}</div>`:''}</div>`:'';
   S.push(`<section class="slide dark nobrand">
     <div class="shead"><div class="eyebrow" style="color:var(--champ2)">Próximos passos</div>
     <h2 class="title">Vamos estruturar o fundo do ${esc(d.grupo)}</h2></div>
     <div class="lead" style="margin-top:.5vh">A SOMMA conduz todas as etapas — da estruturação à operação recorrente — com o fundo pronto para operar em até 120 dias. O próximo passo é validar as premissas deste estudo com a sua equipe e iniciar a diligência da carteira.</div>
+    ${execBlock}
     <div class="contact">
       <div><b>SOMMA Investimentos</b>www.sommainvestimentos.com.br<br>contato@sommainvestimentos.com.br</div>
       <div><b>Escritórios</b>Florianópolis · Jaraguá do Sul · Chapecó · São Paulo</div>
