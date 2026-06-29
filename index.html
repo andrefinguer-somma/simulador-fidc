@@ -480,7 +480,7 @@ function dreCompute(p,sim){
     const w=totalRL>0?b.rl/totalRL:(bals.length?1/bals.length:0);
     const alloc=des*w;
     const lairSem=b.rl-b.cmv-b.do+b.rf-b.df;
-    const lairCom=lairSem-alloc;
+    const lairCom=lairSem-b.rf-alloc;
     const tS=taxes(lairSem),tC=taxes(lairCom);
     return{nome:b.nome,rl:b.rl,cmv:b.cmv,do:b.do,rf:b.rf,df:b.df,w,alloc,lairSem,lairCom,tS,tC,eff:tS.total-tC.total};
   });
@@ -501,11 +501,13 @@ function dreGridHTML(o){
     ['Receita líquida',o.rl,o.rl,0],['(−) CMV',-o.cmv,-o.cmv,1],
     ['Lucro bruto',lucroBruto,lucroBruto,2],['(−) Despesas operacionais',-o.do,-o.do,1],
     ['LAJIR',lajir,lajir,2],['(+) Receitas financeiras',o.rf,o.rf,1],
-    ['(−) Despesas financeiras',-o.df,-o.df,1],['(−) Despesas financeiras FIDC',0,-o.alloc,3],
+    ['(−) Despesas financeiras',-o.df,-o.df,1]
+  ];
+  if(o.rf>0) rows.push(['(−) Receita financeira transferida ao FIDC',0,-o.rf,3]);
+  rows.push(['(−) Despesas financeiras FIDC',0,-o.alloc,3],
     ['LAIR',o.lairSem,o.lairCom,2],['CSLL (9%)',-o.tS.csll,-o.tC.csll,1],['IRPJ (15%)',-o.tS.irpj,-o.tC.irpj,1],
     ['IRPJ adicional (10%)',-o.tS.adic,-o.tC.adic,1],['Imposto apurado',-o.tS.total,-o.tC.total,2],
-    ['Lucro líquido',o.lairSem-o.tS.total,o.lairCom-o.tC.total,2]
-  ];
+    ['Lucro líquido',o.lairSem-o.tS.total,o.lairCom-o.tC.total,2]);
   let h='<div class="h name">Rubrica</div><div class="h r">Sem FIDC</div><div class="h r">Com FIDC</div>';
   rows.forEach(([n,a,b,t])=>{const cls=t===2?'bold':(t===3?'fidc':'');const sub=(t===1||t===3)?'sub':'';
     h+=`<div class="name ${sub} ${cls}">${n}</div><div class="r ${cls}">${a===0&&t===3?'—':fmtR(a)}</div><div class="r ${cls}">${fmtR(b)}</div>`;});
@@ -601,7 +603,7 @@ function render(){
     const multi=dc.companies.length>1;
     $('kpiEff').textContent='R$ '+fmt0(dc.effTotal);
     let html=`<div class="dre-eff"><div><div class="lab">Eficiência tributária ${multi?'consolidada':'no ano'}</div><div class="big">R$ ${fmt0(dc.effTotal)}</div></div>
-       <div class="note">O FIDC gera despesa financeira de <b style="color:#fff">R$ ${fmt0(sim.desagioAno1)}</b> no 1º ano${multi?', alocada entre as '+dc.companies.length+' empresas proporcionalmente à receita líquida':''}. ${multi?'A economia é detalhada por empresa e consolidada abaixo.':'Os tributos do período caem de R$ '+fmt0(dc.cons.tS.total)+' para R$ '+fmt0(dc.cons.tC.total)+'.'} O deságio retorna aos sócios como rentabilidade da cota subordinada.</div></div>`;
+       <div class="note">O FIDC gera despesa financeira de <b style="color:#fff">R$ ${fmt0(sim.desagioAno1)}</b> no 1º ano${multi?', alocada entre as '+dc.companies.length+' empresas proporcionalmente à receita líquida':''}.${dc.cons.rf>0?' Toda a receita financeira da operação (R$ '+fmt0(dc.cons.rf)+') passa a ser gerada dentro do fundo, com diferimento tributário, ampliando a base dedutível.':''} ${multi?'A economia é detalhada por empresa e consolidada abaixo.':'Os tributos do período caem de R$ '+fmt0(dc.cons.tS.total)+' para R$ '+fmt0(dc.cons.tC.total)+'.'} O deságio retorna aos sócios como rentabilidade da cota subordinada.</div></div>`;
     if(multi){
       html+='<div class="section-lbl">Por empresa</div>';
       dc.companies.forEach(c=>{html+=`<div class="dre-co"><div class="co-hd"><b>${escHtml(c.nome)}</b><span class="ec">economia R$ ${fmt0(c.eff)} <small>· deságio R$ ${fmt0(c.alloc)} (${fmtP(c.w,1)})</small></span></div>${dreGridHTML(c)}</div>`;});
@@ -664,9 +666,7 @@ function render(){
   $('mxWrap').innerHTML=
     `<div class="tscroll" style="border:none;overflow-x:auto"><table class="heat">${th}</table></div>
      <div class="scenarios">${scens.map(s=>`<div class="scen ${s.n==='Cenário base'?'hl':''}"><b>${s.n}</b><span>PL ${s.pl/1e6}MM · ${(s.t*100).toLocaleString('pt-BR',{minimumFractionDigits:2})}% a.m.</span></div>`).join('')}</div>
-     <div class="chartbox"><h4>Resultado ano a ano por cenário (% a.a.)</h4><div class="chartwrap" style="height:300px"><canvas id="chScen"></canvas></div></div>
      <div class="callout">Considerando o cenário base, o resultado esperado da cota subordinada é de <b>${fmtP(baseCagr)} a.a.</b> Em cenários extremos, o resultado anualizado varia de <b>${fmtP(mn)}</b> a <b>${fmtP(mx)} a.a.</b></div>`;
-  if($('tmx').classList.contains('show')) drawScen();
 }
 
 function drawScen(){
@@ -716,7 +716,7 @@ document.querySelectorAll('nav.tabs button').forEach(b=>b.addEventListener('clic
   document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('section.panel').forEach(x=>x.classList.remove('show'));
   b.classList.add('active');$(b.dataset.tab).classList.add('show');
-  requestAnimationFrame(()=>{[chPL,chCota].forEach(c=>{try{if(c&&c.ctx){c.resize();c.update();}}catch(e){}});if(b.dataset.tab==='tmx')drawScen();});
+  requestAnimationFrame(()=>{[chPL,chCota].forEach(c=>{try{if(c&&c.ctx){c.resize();c.update();}}catch(e){}});});
 }));
 document.querySelectorAll('aside input').forEach(i=>{
   i.addEventListener('input',render);
@@ -782,9 +782,7 @@ async function generateDeck(){
     {label:'Cota subordinada',data:LAST.cotaSc,borderColor:C_CHAMP,borderWidth:3.5,pointRadius:0,tension:.25},
     {label:'CDI',data:LAST.cotaSd,borderColor:C_SLATE2,borderWidth:3.5,pointRadius:0,tension:.25}]},
     options:{plugins:{legend:leg},scales:{x:{...axis,ticks:{...axis.ticks,maxTicksLimit:13}},y:axis}}},900,440);
-  const scenPng=await captureChart({type:'bar',data:{labels:['Ano 1','Ano 2','Ano 3','Ano 4','Ano 5'],datasets:LAST.scens.map((s,i)=>({label:s.n,data:LAST.scenSims[i].years.map(y=>+(y.ret*100).toFixed(2)),backgroundColor:s.c,borderRadius:5}))},options:{plugins:{legend:leg},scales:{x:axis,y:{...axis,ticks:{...axis.ticks,callback:v=>v+'%'}}}}},1700,460);
-
-  const d=buildDeckData(p,sim,cost,plPng,cotaPng,scenPng);
+  const d=buildDeckData(p,sim,cost,plPng,cotaPng);
   const html=DECK_DOC(d);
   const blob=new Blob([html],{type:'text/html'});
   const url=URL.createObjectURL(blob);
@@ -793,11 +791,11 @@ async function generateDeck(){
   toast('Proposta gerada em nova aba.');
 }
 
-function buildDeckData(p,sim,cost,plPng,cotaPng,scenPng){
+function buildDeckData(p,sim,cost,plPng,cotaPng){
   const dt=new Date();
   const dataStr=dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
   let dre=p.dreReady?dreCompute(p,sim):null;
-  return{p,sim,cost,dre,dataStr,plPng,cotaPng,scenPng,
+  return{p,sim,cost,dre,dataStr,plPng,cotaPng,
     grupo:p.grupo,exec:p.exec,
     kPL0:sim.pl0,kPL5:sim.plFinal,kCagr:sim.cagr,kCdi:p.cdi,kExcesso:sim.cagr-p.cdi,
     kMultCap:sim.plFinal/sim.pl0,kMultAporte:sim.plFinal/p.plInicial,kDesagio:sim.desagioAno1,
@@ -983,6 +981,9 @@ h2.title{font-weight:300;font-size:3.1vw;line-height:1.08;color:var(--slate8);le
 .heat th.cols{background:var(--slate8);color:#fff;border-radius:var(--rchip);padding:1vh 1.1vw}
 .heat th.rows{background:var(--paper2);border-radius:var(--rchip);padding:1vh .8vw;color:var(--slate8)}
 .heat td{border-radius:var(--rchip);padding:1.2vh 1.1vw;font-weight:600;text-align:center;font-size:.9vw;color:var(--slate9)}
+.readrow{display:flex;justify-content:space-between;align-items:baseline;gap:1vw;padding:1.1vh 0;border-bottom:1px solid var(--rule);font-size:.88vw;color:var(--ink2)}
+.readrow:last-child{border-bottom:none}
+.readrow b{font-size:1.15vw;color:var(--slate8);font-weight:600;white-space:nowrap}
 .heat td.base{outline:2px solid var(--champ);outline-offset:-1px}
 
 /* close */
@@ -1200,7 +1201,7 @@ function buildDeckBody(d){
       <h2 class="title">A eficiência tributária do FIDC</h2></div>
       ${body}
       <div class="effbox"><div><div class="lab">Economia tributária ${multi?'consolidada':'no ano'}</div><div class="big">R$ ${fmt0(dc.effTotal)}</div></div>
-      <div class="note">A despesa financeira de <b style="color:#fff">R$ ${fmt0(sim.desagioAno1)}</b> reduz a base de IRPJ/CSLL${multi?', alocada entre as '+dc.companies.length+' empresas do grupo':''}. O valor retorna a você como sócio da cota subordinada.</div></div>
+      <div class="note">A despesa financeira de <b style="color:#fff">R$ ${fmt0(sim.desagioAno1)}</b> reduz a base de IRPJ/CSLL${multi?', alocada entre as '+dc.companies.length+' empresas do grupo':''}.${dc.cons.rf>0?' Toda a receita financeira da operação passa a ser gerada dentro do fundo, com diferimento tributário.':''} O valor retorna a você como sócio da cota subordinada.</div></div>
       ${footL()}${pg(9)}
     </section>`);
   }else{
@@ -1239,7 +1240,7 @@ function buildDeckBody(d){
           <div><b>R$ ${fmtMM(sim.years[0].plFim)}</b><span>patrimônio ao fim do 1º ano</span></div>
         </div>
       </div>
-      <div class="synnote">Remuneração das cotas e economia tributária somam-se para o grupo: o mesmo deságio que remunera o fundo reduz a base de IRPJ/CSLL da operação. O custo do fundo já está descontado da remuneração das cotas. A partir do 2º ano não há o custo de setup.</div>
+      <div class="synnote">Remuneração das cotas e economia tributária somam-se para o grupo: o mesmo deságio que remunera o fundo reduz a base de IRPJ/CSLL — e toda a receita financeira da operação passa a ser gerada dentro do fundo, com diferimento tributário. O custo do fundo já está descontado da remuneração das cotas. A partir do 2º ano não há o custo de setup.</div>
       ${footL()}${pg(10)}
     </section>`);
   }
@@ -1251,13 +1252,18 @@ function buildDeckBody(d){
     const isBase=(Math.abs(t-p.taxa)<1e-9&&Math.abs(h.pls[j]-p.plInicial)<1);
     return`<td class="${isBase?'base':''}" style="background:${heatColor(v,h.mn,h.mx)};color:${heatText(v,h.mn,h.mx)}">${fmtP(v)}</td>`;}).join('')+'</tr>';});
   S.push(`<section class="slide">
-    <div class="shead"><div class="eyebrow">Sensibilidade & cenários</div>
+    <div class="shead"><div class="eyebrow">Análise de sensibilidade</div>
     <h2 class="title">O resultado se sustenta em vários cenários</h2></div>
-    <div class="twocol" style="grid-template-columns:.9fr 1.1fr;align-items:start">
-      <div class="cbox"><h4>CAGR 5 anos · PL × taxa de cessão</h4><table class="heat">${th}</table></div>
-      <div class="cbox"><h4>Resultado ano a ano por cenário</h4><img src="${d.scenPng}" alt="Cenários"></div>
+    <div class="twocol" style="grid-template-columns:1.35fr .65fr;align-items:start">
+      <div class="cbox"><h4>CAGR 5 anos · PL inicial × taxa de cessão</h4><table class="heat">${th}</table></div>
+      <div class="cbox"><h4>Como ler</h4>
+        <p style="font-size:.86vw;color:var(--ink2);line-height:1.6;margin-bottom:1.2vh">Cada célula é o retorno anualizado (CAGR de 5 anos) da cota subordinada para um PL inicial e uma taxa de cessão.</p>
+        <div class="readrow"><span>No seu cenário</span><b>${fmtP(sim.cagr)} a.a.</b></div>
+        <div class="readrow"><span>Faixa simulada</span><b>${fmtP(h.mn)}–${fmtP(h.mx)}</b></div>
+        <div class="readrow"><span>CDI projetado</span><b>${fmtP(p.cdi)} a.a.</b></div>
+      </div>
     </div>
-    <div class="softnote" style="margin-top:1.2vh">No cenário base, a cota subordinada rende <b style="color:var(--slate8)">${fmtP(simulate(p,30e6,0.025).cagr)} a.a.</b> Mesmo no cenário conservador o resultado supera com folga o CDI projetado de ${fmtP(p.cdi)} a.a.</div>
+    <div class="softnote" style="margin-top:1.4vh">No seu cenário, a cota subordinada rende <b style="color:var(--slate8)">${fmtP(sim.cagr)} a.a.</b> Mesmo no piso da matriz, o resultado supera com folga o CDI projetado de ${fmtP(p.cdi)} a.a.</div>
     ${footL()}${pg(11)}
   </section>`);
 
@@ -1309,9 +1315,11 @@ function deckDreGrid(o){
   const rows=[['Receita líquida',o.rl,o.rl,0],['(−) CMV',-o.cmv,-o.cmv,1],
     ['Lucro bruto',lucroBruto,lucroBruto,2],['(−) Despesas operacionais',-o.do,-o.do,1],
     ['LAJIR',lajir,lajir,2],['(+) Receitas financeiras',o.rf,o.rf,1],
-    ['(−) Despesas financeiras',-o.df,-o.df,1],['(−) Despesas financeiras FIDC',0,-o.alloc,3],
+    ['(−) Despesas financeiras',-o.df,-o.df,1]];
+  if(o.rf>0) rows.push(['(−) Receita financeira transferida ao FIDC',0,-o.rf,3]);
+  rows.push(['(−) Despesas financeiras FIDC',0,-o.alloc,3],
     ['LAIR',o.lairSem,o.lairCom,2],['Imposto apurado (IRPJ+CSLL)',-o.tS.total,-o.tC.total,2],
-    ['Lucro líquido',o.lairSem-o.tS.total,o.lairCom-o.tC.total,2]];
+    ['Lucro líquido',o.lairSem-o.tS.total,o.lairCom-o.tC.total,2]);
   let g='<div class="h">Rubrica</div><div class="h r">Sem FIDC</div><div class="h r">Com FIDC</div>';
   rows.forEach(([n,a,b,t])=>{const cls=t===2?'bold':(t===3?'fidc':'');const sub=(t===1||t===3)?'sub':'';
     g+=`<div class="${sub} ${cls}">${n}</div><div class="r ${cls}">${a===0&&t===3?'—':fmtR(a)}</div><div class="r ${cls}">${fmtR(b)}</div>`;});
