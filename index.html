@@ -649,7 +649,7 @@ function render(){
     {label:'CDI ('+fmtX(sd[60])+')',data:sd,borderColor:C_SLATE2,backgroundColor:C_SLATE2,borderWidth:2.5,tension:.25}];});
 
   /* sensitivity matrix */
-  const pls=[10e6,30e6,50e6], txs=[0.020,0.0225,0.025,0.0275,0.030];
+  const pls=[10e6,50e6,100e6,200e6], txs=[0.020,0.0225,0.025,0.0275,0.030];
   const grid=txs.map(t=>pls.map(plv=>simulate(p,plv,t).cagr));
   const flat=grid.flat(), mn=Math.min(...flat), mx=Math.max(...flat);
   LAST.heat={pls,txs,grid,mn,mx};
@@ -978,11 +978,11 @@ h2.title{font-weight:300;font-size:3.1vw;line-height:1.08;color:var(--slate8);le
 .synnote{font-size:.8vw;color:var(--ink2);line-height:1.55;margin-top:1.4vh;max-width:82vw}
 
 /* heat */
-.heat{border-collapse:separate;border-spacing:.5vw;margin-top:1vh}
-.heat th{font-weight:500;font-size:.82vw}
-.heat th.cols{background:var(--slate8);color:#fff;border-radius:var(--rchip);padding:1vh 1.6vw}
-.heat th.rows{background:var(--paper2);border-radius:var(--rchip);padding:1vh 1vw;color:var(--slate8)}
-.heat td{border-radius:var(--rchip);padding:1.3vh 1.6vw;font-weight:600;text-align:center;font-size:.92vw;color:var(--slate9)}
+.heat{border-collapse:separate;border-spacing:.45vw;margin-top:1vh}
+.heat th{font-weight:500;font-size:.8vw}
+.heat th.cols{background:var(--slate8);color:#fff;border-radius:var(--rchip);padding:1vh 1.1vw}
+.heat th.rows{background:var(--paper2);border-radius:var(--rchip);padding:1vh .8vw;color:var(--slate8)}
+.heat td{border-radius:var(--rchip);padding:1.2vh 1.1vw;font-weight:600;text-align:center;font-size:.9vw;color:var(--slate9)}
 .heat td.base{outline:2px solid var(--champ);outline-offset:-1px}
 
 /* close */
