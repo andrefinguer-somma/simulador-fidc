@@ -98,6 +98,10 @@ details.grp .body{padding:6px 18px 16px;border-top:1px solid var(--rule-2)}
 .field.col label{flex:none}
 .field.col input{width:100%;text-align:left;font-family:'Inter'}
 .subhead{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:600;margin:14px 0 6px;padding-top:12px;border-top:1px solid var(--rule-2)}
+.fixgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;margin-top:6px}
+.fx{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:5px 0;border-bottom:1px solid var(--rule-2);font-size:11.5px;min-width:0}
+.fx span{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fx b{color:var(--somma-slate-800);font-weight:600;white-space:nowrap}
 /* balanços */
 .bal{border:1px solid var(--rule);border-radius:var(--r-chip);padding:10px 12px 4px;margin-bottom:10px;background:var(--paper)}
 .bal-hd{display:flex;align-items:center;gap:8px;margin-bottom:4px}
@@ -240,6 +244,7 @@ footer.note{padding:0 40px 48px;max-width:1680px;margin:0 auto;font-size:11.5px;
       <div class="field col"><label>Nome do grupo / família</label><input class="txt" id="grupo" type="text" placeholder="Ex.: Grupo Aurora" maxlength="60"></div>
       <div class="field"><label title="Custo único de estruturação do fundo (Ano 0)">Setup / Estruturação <span class="hint">R$ · custo único</span></label><input class="money" id="estrut" inputmode="numeric" placeholder="0"></div>
       <div class="field"><label title="Remuneração da SOMMA como gestora">Taxa de gestão <span class="hint">% a.a. · remuneração SOMMA</span></label><input type="number" id="gestaoAA" step="0.05" placeholder="0,00"></div>
+      <div class="field"><label title="Honorário da consultoria especializada — % sobre o volume operacionalizado; entra como despesa do fundo">Consultoria especializada <span class="hint">% · sobre volume operac.</span></label><input type="number" id="consultAA" step="0.05" placeholder="0,00"></div>
       <div class="subhead">Executivo responsável</div>
       <div class="field col"><label>Nome do executivo</label><input class="txt" id="execNome" type="text" placeholder="Seu nome" maxlength="60"></div>
       <div class="field col"><label>Cargo</label><input class="txt" id="execCargo" type="text" placeholder="Ex.: Consultor de Investimentos" maxlength="60"></div>
@@ -252,7 +257,6 @@ footer.note{padding:0 40px 48px;max-width:1680px;margin:0 auto;font-size:11.5px;
     <summary><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg></span><span class="lbl">Estrutura do fundo</span><span class="car">▼</span></summary>
     <div class="body">
       <div class="field"><label title="Aporte do cedente na cota subordinada">PL Subordinada inicial <span class="hint">R$</span></label><input class="money" id="plInicial" inputmode="numeric" placeholder="0"></div>
-      <div class="field"><label title="Custo de entrada sobre o PL no Ano 0 — fixo">IOF + Distribuição <span class="hint lockmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> imutável</span></label><div class="fix" id="iofFix">0,39%</div></div>
       <div class="field"><label title="Curva de juros projetada — pré-preenchida com o CDI do dia, editável">CDI projetado <span class="hint">% a.a.</span></label><input type="number" id="cdi" step="0.05" value="14.15"></div>
     </div>
   </details>
@@ -264,28 +268,31 @@ footer.note{padding:0 40px 48px;max-width:1680px;margin:0 auto;font-size:11.5px;
       <div class="field"><label>Prazo médio crediário <span class="hint">dias</span></label><input type="number" id="prazoCred" step="5" placeholder="0"></div>
       <div class="field"><label>% Cartão de crédito</label><input type="number" id="pctCard" step="0.5" placeholder="0,0"></div>
       <div class="field"><label>Prazo médio cartão <span class="hint">dias</span></label><input type="number" id="prazoCard" step="5" placeholder="0"></div>
-      <div class="field"><label title="Parcela do PL mantida em caixa — fixa">% Caixa <span class="hint lockmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> imutável</span></label><div class="fix" id="pctCaixaRO">5%</div></div>
       <div class="dcwarn" id="dcWarn"></div>
       <div class="field"><label title="Deságio mensal médio cobrado na cessão dos recebíveis">Taxa média de cessão <span class="hint">% a.m.</span></label><input type="number" id="taxaCessao" step="0.05" placeholder="0,00"></div>
-      <div class="field"><label title="Rentabilidade do caixa — fixa">Rentabilidade caixa <span class="hint lockmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> imutável</span></label><div class="fix" id="caixaFix">95% do CDI</div></div>
       <div class="field"><label title="Estoque-alvo de provisão sobre a carteira de direitos creditórios">PDD / perdas <span class="hint">% da carteira de DCs</span></label><input type="number" id="pddRate" step="0.05" placeholder="0,00"></div>
     </div>
   </details>
 
-  <details class="grp">
-    <summary><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span><span class="lbl">Custos do fundo</span><span class="car">▼</span></summary>
+  <details class="grp" id="grpFix">
+    <summary><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span><span class="lbl">Custos de terceiros & parâmetros fixos</span><span class="car">▼</span></summary>
     <div class="body">
-      <div class="grpnote">A consultoria especializada é editável e entra como despesa do fundo. Os custos de terceiros abaixo são fixos e exibidos para transparência.</div>
-      <div class="field"><label title="Honorário do consultor especializado — entra como despesa do fundo">Consultoria especializada <span class="hint">% a.a.</span></label><input type="number" id="consultAA" step="0.05" placeholder="0,00"></div>
-      <div class="field"><label>Adm. e custódia <span class="hint">% a.a. (mín. R$ 24.222/mês)</span></label><div class="fix">0,22%</div></div>
-      <div class="field"><label>Taxa ANBIMA <span class="hint">R$/bimestre</span></label><div class="fix">260</div></div>
-      <div class="field"><label>Taxa CVM <span class="hint">R$/ano</span></label><div class="fix">9.487</div></div>
-      <div class="field"><label>Banco liquidante <span class="hint">R$/mês</span></label><div class="fix">900</div></div>
-      <div class="field"><label>Certificadora <span class="hint">R$/título cedido</span></label><div class="fix">0,06</div></div>
-      <div class="field"><label>Despesas gerais <span class="hint">% a.a. s/ PL</span></label><div class="fix">0,05%</div></div>
-      <div class="field"><label>Registro duplicatas <span class="hint">R$ fixo/mês + 2% s/ deságio cartão</span></label><div class="fix">5.000</div></div>
-      <div class="field"><label>Auditoria externa <span class="hint">R$/ano</span></label><div class="fix">8.800</div></div>
-      <div class="field"><label>Auditoria de lastro <span class="hint">R$/trimestre</span></label><div class="fix">3.500</div></div>
+      <div class="grpnote">Valores padrão da estrutura, fixos e não editáveis. Exibidos para conferência — revise se houver alteração de custos na sua operação.</div>
+      <div class="fixgrid">
+        <div class="fx"><span>IOF + Distribuição</span><b>0,39%</b></div>
+        <div class="fx"><span>% Caixa</span><b>5%</b></div>
+        <div class="fx"><span>Rentab. caixa</span><b>95% CDI</b></div>
+        <div class="fx"><span>Adm. e custódia</span><b>0,22% a.a.</b></div>
+        <div class="fx"><span>Adm. mínima</span><b>R$ 24.222/mês</b></div>
+        <div class="fx"><span>Taxa ANBIMA</span><b>R$ 260/bim.</b></div>
+        <div class="fx"><span>Taxa CVM</span><b>R$ 9.487/ano</b></div>
+        <div class="fx"><span>Banco liquidante</span><b>R$ 900/mês</b></div>
+        <div class="fx"><span>Certificadora</span><b>R$ 0,06/título</b></div>
+        <div class="fx"><span>Despesas gerais</span><b>0,05% a.a.</b></div>
+        <div class="fx"><span>Registro duplicatas</span><b>R$ 5.000 +2%</b></div>
+        <div class="fx"><span>Auditoria externa</span><b>R$ 8.800/ano</b></div>
+        <div class="fx"><span>Auditoria de lastro</span><b>R$ 3.500/trim.</b></div>
+      </div>
     </div>
   </details>
 
@@ -930,6 +937,11 @@ h2.title{font-weight:300;font-size:3.1vw;line-height:1.08;color:var(--slate8);le
 .costtot{display:flex;justify-content:space-between;align-items:center;background:var(--slate8);color:#fff;border-radius:var(--rcard);padding:1.8vh 1.4vw;margin-top:1.4vh;border-left:3px solid var(--champ)}
 .costtot .l{font-size:1vw}.costtot .l span{display:block;font-size:.78vw;color:#b8c6cc;margin-top:.3vh}
 .costtot .v{font-size:1.9vw;font-weight:600;color:var(--champ2)}
+.costlist{display:grid;grid-template-columns:1fr 1fr;gap:0 2.6vw;margin-top:1.2vh}
+.costlist .ci{display:flex;justify-content:space-between;align-items:baseline;gap:1vw;padding:.9vh 0;border-bottom:1px dotted var(--rule)}
+.costlist .ci span{font-size:.9vw;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.costlist .ci b{font-size:.94vw;color:var(--slate8);font-weight:600;white-space:nowrap}
+.costlist .ci b i{font-style:normal;color:var(--muted);font-weight:400;font-size:.78vw;margin-left:.6vw}
 
 /* dre table */
 .dgrid{display:grid;grid-template-columns:1.3fr 1fr 1fr;border:1px solid var(--rule);border-radius:var(--rcard);overflow:hidden;margin-top:1vh}
@@ -1042,7 +1054,7 @@ const ICN={
   shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'
 };
 function ic(n){return'<svg viewBox="0 0 24 24">'+ICN[n]+'</svg>';}
-const DECK_TOTAL=13;
+const DECK_TOTAL=14;
 function pg(n){return'<div class="pageno">'+n+' / '+DECK_TOTAL+'</div>';}
 function footL(){return'<div class="foot">SOMMA Multi-Family Office · Proposta de constituição de FIDC · confidencial</div>';}
 
@@ -1059,7 +1071,7 @@ function buildDeckBody(d){
     <div class="sub">Um fundo estruturado e gerido pela SOMMA para antecipar recebíveis, ganhar eficiência tributária e remunerar o caixa da sua empresa acima do CDI.</div>
     <div class="meta">Preparado para</div><div class="grupo">${esc(d.grupo)}</div>
     <div class="foot">${d.dataStr} · Confidencial</div>
-    <div class="pageno">1 / 13</div>
+    <div class="pageno">1 / 14</div>
   </section>`);
 
   /* 2 — credenciais */
@@ -1168,19 +1180,19 @@ function buildDeckBody(d){
     ${footL()}${pg(7)}
   </section>`);
 
-  /* 8 — despesas & custo 1º ano */
-  const terAll=(p.consultAA>0?[['Consultoria especializada',c.consult]]:[]).concat(c.terceiros);
-  const terLi=terAll.map(r=>`<li>${r[0]}<b>R$ ${fmt0(r[1])}</b></li>`).join('');
-  const terTot=c.subTer+(p.consultAA>0?c.consult:0);
+  /* 8 — estrutura de custo do fundo */
+  const opItems=[['Taxa de gestão',c.gestao]]
+    .concat(p.consultAA>0?[['Consultoria especializada',c.consult]]:[])
+    .concat(c.terceiros)
+    .sort((a,b)=>b[1]-a[1]);
+  const opTot=c.totalRec;
+  const opLi=opItems.map(r=>`<div class="ci"><span>${r[0]}</span><b>R$ ${fmt0(r[1])} <i>${fmtP(r[1]/opTot,1)}</i></b></div>`).join('');
   S.push(`<section class="slide">
-    <div class="shead"><div class="eyebrow">Transparência de custos</div>
-    <h2 class="title">O que custa operar o fundo no 1º ano</h2></div>
-    <div class="cost3">
-      <div class="cblk"><div class="ct">Custo único · Ano 0</div><div class="cv">R$ ${fmt0(c.setup)}</div><div class="cd">Setup / estruturação do fundo</div></div>
-      <div class="cblk somma"><div class="ct">Remuneração SOMMA</div><div class="cv">R$ ${fmt0(c.gestao)}</div><div class="cd">Taxa de gestão · ${fmtP(p.gestAA)} a.a.</div></div>
-      <div class="cblk"><div class="ct">Custos de terceiros</div><div class="cv">R$ ${fmt0(terTot)}</div><ul>${terLi}</ul></div>
-    </div>
-    <div class="costtot"><div class="l">Custo total do 1º ano + setup<span>Recorrente a partir do Ano 2: ~${fmtP(c.pctRec,1)} do PL ao ano</span></div><div class="v">R$ ${fmt0(c.totalComSetup)} · ${fmtP(c.pctPL,1)} do PL</div></div>
+    <div class="shead"><div class="eyebrow">Custos operacionais do fundo</div>
+    <h2 class="title">A estrutura de custo do fundo</h2></div>
+    <div class="costlist">${opLi}</div>
+    <div class="costtot"><div class="l">Custo operacional do 1º ano<span>Recorrente — aproximadamente ${fmtP(c.pctRec,1)} do PL ao ano</span></div><div class="v">R$ ${fmt0(opTot)}</div></div>
+    <div class="softnote" style="margin-top:1.2vh">Percentuais calculados sobre o custo operacional total do 1º ano. O setup de estruturação (custo único no Ano 0) e as condições comerciais da SOMMA estão detalhados na proposta comercial.</div>
     ${footL()}${pg(8)}
   </section>`);
 
@@ -1245,7 +1257,24 @@ function buildDeckBody(d){
     </section>`);
   }
 
-  /* 11 — matriz */
+  /* 11 — proposta comercial SOMMA */
+  S.push(`<section class="slide">
+    <div class="shead"><div class="eyebrow">Proposta comercial</div>
+    <h2 class="title">A proposta da SOMMA</h2></div>
+    <div class="syn3">
+      <div class="syncard gain"><div class="st">Taxa de gestão</div><div class="sv">${fmtP(p.gestAA)}<span style="font-size:.95vw;color:var(--muted);font-weight:400"> a.a.</span></div><div class="sd">≈ R$ ${fmt0(p.gestAA*p.plInicial)} ao ano sobre o PL do fundo</div></div>
+      <div class="syncard gain"><div class="st">Consultoria especializada</div><div class="sv">${fmtP(p.consultAA)}</div><div class="sd">sobre o volume operacionalizado</div></div>
+      <div class="syncard gain"><div class="st">Setup / estruturação</div><div class="sv">R$ ${fmt0(p.estrut)}</div><div class="sd">custo único para constituir e colocar o fundo em operação</div></div>
+    </div>
+    <div class="synhero" style="margin-top:1.5vh">
+      <div><div class="lab">Estruturação de captação · opcional</div><div class="big">2% a 5%</div></div>
+      <div style="margin-left:auto;max-width:36vw;font-size:.92vw;color:#cdd9dd;line-height:1.55">sobre o volume captado — aplicável apenas quando a SOMMA também apoia a captação de investidores para o seu fundo.</div>
+    </div>
+    <div class="synnote">A taxa de gestão remunera a gestão do fundo pela SOMMA e a consultoria especializada remunera o acompanhamento técnico da carteira. O setup é um custo único no Ano 0. Os demais custos operacionais (administração, custódia, auditoria e taxas regulatórias) estão no slide de estrutura de custo do fundo.</div>
+    ${footL()}${pg(11)}
+  </section>`);
+
+  /* 12 — matriz */
   const h=d.heat;
   let th='<tr><th></th>'+h.pls.map(v=>`<th class="cols">${v/1e6} MM</th>`).join('')+'</tr>';
   h.txs.forEach((t,i)=>{th+=`<tr><th class="rows">${(t*100).toLocaleString('pt-BR',{minimumFractionDigits:2})}%</th>`+h.grid[i].map((v,j)=>{
@@ -1264,7 +1293,7 @@ function buildDeckBody(d){
       </div>
     </div>
     <div class="softnote" style="margin-top:1.4vh">No seu cenário, a cota subordinada rende <b style="color:var(--slate8)">${fmtP(sim.cagr)} a.a.</b> Mesmo no piso da matriz, o resultado supera com folga o CDI projetado de ${fmtP(p.cdi)} a.a.</div>
-    ${footL()}${pg(11)}
+    ${footL()}${pg(12)}
   </section>`);
 
   /* 11 — etapas de implementação */
@@ -1286,7 +1315,7 @@ function buildDeckBody(d){
         <span class="presp">Distribuidor · investidores · cedente · gestor</span></div>
     </div>
     <div class="softnote" style="margin-top:1.6vh">Cronograma estimado. Os prazos podem variar conforme a complexidade da carteira e os tempos de resposta dos órgãos reguladores. Meta: <b style="color:var(--slate8)">fundo pronto para operar em até 120 dias</b>.</div>
-    ${footL()}${pg(12)}
+    ${footL()}${pg(13)}
   </section>`);
 
   /* 12 — próximos passos */
@@ -1304,7 +1333,7 @@ function buildDeckBody(d){
       <div><b>Escritórios</b>Florianópolis · Jaraguá do Sul · Chapecó · São Paulo</div>
     </div>
     <img class="deck-logo" src="${LOGO_WHITE}" style="position:absolute;right:6vw;top:5.2vh;height:4vh" alt="SOMMA">
-    <div class="pageno">13 / 13</div>
+    <div class="pageno">14 / 14</div>
   </section>`);
 
   return S.join('');
