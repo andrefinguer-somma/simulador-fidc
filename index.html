@@ -480,6 +480,18 @@ function P(){
   return p;
 }
 
+/* eixos da matriz centrados no valor informado, com números redondos */
+function plLadder(base){
+  const mant=[1,2,3,5],lad=[];
+  for(let k=4;k<=12;k++)for(const m of mant)lad.push(m*Math.pow(10,k));
+  lad.sort((a,b)=>a-b);
+  const below=lad.filter(v=>v<base*0.999).slice(-2);
+  const above=lad.filter(v=>v>base*1.001).slice(0,2);
+  return [...below,base,...above];
+}
+function taxaLadder(base){const s=0.0025;return [base-2*s,base-s,base,base+s,base+2*s];}
+function fmtPL(v){return v>=1e9?(v/1e9).toLocaleString('pt-BR',{maximumFractionDigits:1})+' bi':(v/1e6).toLocaleString('pt-BR')+' MM';}
+
 function simulate(p,plOverride,taxaOverride){
   const pl0base=plOverride??p.plInicial;
   const taxa=taxaOverride??p.taxa;
@@ -715,21 +727,21 @@ function render(){
     {label:'CDI ('+fmtX(sd[60])+')',data:sd,borderColor:C_SLATE2,backgroundColor:C_SLATE2,borderWidth:2.5,tension:.25}];});
 
   /* sensitivity matrix */
-  const pls=[10e6,50e6,100e6,200e6], txs=[0.020,0.0225,0.025,0.0275,0.030];
+  const pls=plLadder(p.plInicial), txs=taxaLadder(p.taxa);
   const grid=txs.map(t=>pls.map(plv=>simulate(p,plv,t).cagr));
   const flat=grid.flat(), mn=Math.min(...flat), mx=Math.max(...flat);
   LAST.heat={pls,txs,grid,mn,mx};
-  let th='<tr><th></th>'+pls.map(v=>`<th class="cols">${v/1e6} MM</th>`).join('')+'</tr>';
+  let th='<tr><th></th>'+pls.map(v=>`<th class="cols">${fmtPL(v)}</th>`).join('')+'</tr>';
   txs.forEach((t,i)=>{th+=`<tr><th class="rows">${(t*100).toLocaleString('pt-BR',{minimumFractionDigits:2})}%</th>`+grid[i].map((v,j)=>{
     const isBase=(Math.abs(t-p.taxa)<1e-9&&Math.abs(pls[j]-p.plInicial)<1);
     return`<td class="${isBase?'base':''}" style="background:${heatColor(v,mn,mx)};color:${heatText(v,mn,mx)}">${fmtP(v)}</td>`;}).join('')+'</tr>';});
-  const scens=[{n:'Cenário conservador',pl:10e6,t:0.020,c:C_SLATE2},{n:'Cenário base',pl:30e6,t:0.025,c:C_CHAMP},{n:'Cenário otimista',pl:50e6,t:0.030,c:'#9aa8ae'}];
+  const scens=[{n:'Cenário conservador',pl:pls[0],t:txs[0],c:C_SLATE2},{n:'Cenário base',pl:p.plInicial,t:p.taxa,c:C_CHAMP},{n:'Cenário otimista',pl:pls[pls.length-1],t:txs[txs.length-1],c:'#9aa8ae'}];
   const scenSims=scens.map(s=>simulate(p,s.pl,s.t));
   LAST.scens=scens; LAST.scenSims=scenSims;
-  const baseCagr=simulate(p,30e6,0.025).cagr;
+  const baseCagr=simulate(p).cagr;
   $('mxWrap').innerHTML=
     `<div class="tscroll" style="border:none;overflow-x:auto"><table class="heat">${th}</table></div>
-     <div class="scenarios">${scens.map(s=>`<div class="scen ${s.n==='Cenário base'?'hl':''}"><b>${s.n}</b><span>PL ${s.pl/1e6}MM · ${(s.t*100).toLocaleString('pt-BR',{minimumFractionDigits:2})}% a.m.</span></div>`).join('')}</div>
+     <div class="scenarios">${scens.map(s=>`<div class="scen ${s.n==='Cenário base'?'hl':''}"><b>${s.n}</b><span>PL ${fmtPL(s.pl)} · ${(s.t*100).toLocaleString('pt-BR',{minimumFractionDigits:2})}% a.m.</span></div>`).join('')}</div>
      <div class="callout">Considerando o cenário base, o resultado esperado da cota subordinada é de <b>${fmtP(baseCagr)} a.a.</b> Em cenários extremos, o resultado anualizado varia de <b>${fmtP(mn)}</b> a <b>${fmtP(mx)} a.a.</b></div>`;
 }
 
@@ -1349,7 +1361,7 @@ function buildDeckBody(d){
 
   /* 12 — matriz */
   const h=d.heat;
-  let th='<tr><th></th>'+h.pls.map(v=>`<th class="cols">${v/1e6} MM</th>`).join('')+'</tr>';
+  let th='<tr><th></th>'+h.pls.map(v=>`<th class="cols">${fmtPL(v)}</th>`).join('')+'</tr>';
   h.txs.forEach((t,i)=>{th+=`<tr><th class="rows">${(t*100).toLocaleString('pt-BR',{minimumFractionDigits:2})}%</th>`+h.grid[i].map((v,j)=>{
     const isBase=(Math.abs(t-p.taxa)<1e-9&&Math.abs(h.pls[j]-p.plInicial)<1);
     return`<td class="${isBase?'base':''}" style="background:${heatColor(v,h.mn,h.mx)};color:${heatText(v,h.mn,h.mx)}">${fmtP(v)}</td>`;}).join('')+'</tr>';});
